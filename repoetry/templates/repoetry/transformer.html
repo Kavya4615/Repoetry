@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Poem Transformer</title>
+
+    <!-- Prevent flicker -->
+    <script>
+        (function () {
+            if (localStorage.getItem("theme") === "dark")
+                document.documentElement.classList.add("dark");
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg: linear-gradient(135deg, #dce4ff, #ffe5fc, #d6f7ff);
+            --card-bg: rgba(255,255,255,0.28);
+            --border: rgba(0,0,0,0.25);
+            --text: #111;
+            --input-bg: rgba(255,255,255,0.55);
+            --accent: #7b64ff;
+            --accent-hover: #6a58ff;
+        }
+        html.dark {
+            --bg: linear-gradient(135deg, #000, #0b0b12, #1b1b1b);
+            --card-bg: rgba(0,0,0,0.35);
+            --border: rgba(255,255,255,0.25);
+            --text: #eaeaea;
+            --input-bg: rgba(0,0,0,0.55);
+            --accent: #b6a8ff;
+            --accent-hover: #9f91ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Poppins", sans-serif;
+        }
+
+        /* NAV */
+        .nav {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(18px);
+            padding: 16px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav a { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+        .toggle-box { cursor: pointer; }
+        .toggle { width: 50px; height: 26px; background: var(--border); border-radius: 20px; position: relative; }
+        .toggle-circle {
+            width: 22px; height: 22px; background: white;
+            position: absolute; top: 2px; left: 3px;
+            border-radius: 50%; transition: 0.3s;
+        }
+        html.dark .toggle-circle { left: 25px; background: #ffe37a; }
+
+        /* MAIN CARD */
+        .card {
+            max-width: 760px;
+            margin: 32px auto;
+            padding: 28px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            backdrop-filter: blur(18px);
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin-top: 14px;
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        button {
+            width: 100%; padding: 14px; margin-top: 14px;
+            border-radius: 14px; border: none;
+            background: var(--accent);
+            color: white; font-size: 17px; font-weight: 600;
+        }
+        button:hover { background: var(--accent-hover); }
+
+        /* OUTPUT */
+        .output-box {
+            margin-top: 30px; padding: 22px;
+            background: rgba(0,0,0,0.22);
+            border-radius: 14px; border: 1px solid var(--border);
+            white-space: pre-line;
+            backdrop-filter: blur(12px);
+        }
+
+        .share-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .share-btn { flex: 1; padding: 14px; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; }
+
+        .listen-btn { background:#ff4fa9; }
+        .stop-btn { background:#444; }
+        .whatsapp-btn { background:#25d366; }
+        .copy-btn { background:#ff9800; }
+        .download-btn { background:#2196f3; }
+
+    </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<div class="nav">
+    <h2>✨ Repoetry Transformer</h2>
+
+    <div style="display:flex; gap:20px; align-items:center;">
+        <a href="{% url 'home' %}">🏠 Home</a>
+
+        <div class="toggle-box" onclick="toggleTheme()">
+            <div class="toggle"><div class="toggle-circle"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div class="card">
+
+    <form method="POST" action="{% url 'transform_poem' %}">
+        {% csrf_token %}
+
+        <textarea name="poem" placeholder="Enter your Telugu poem...">{{ original }}</textarea>
+
+        <select name="form">
+            <option value="Dwipada">Dwipada</option>
+            <option value="Kanda Padyam">Kanda Padyam</option>
+            <option value="Satakam">Satakam</option>
+            <option value="Utpalamala">Utpalamala</option>
+        </select>
+
+        <button type="submit">✨ Transform</button>
+    </form>
+
+    {% if result %}
+    <div class="output-box">
+        <h3>✨ {{ form_type }}</h3>
+        <p id="poemText">{{ result }}</p>
+
+        <!-- AUDIO BASE64 PLAYER -->
+        {% if audio_b64 %}
+        <audio id="audioPlayer">
+            <source src="data:audio/mp3;base64,{{ audio_b64 }}" type="audio/mp3">
+        </audio>
+        {% endif %}
+
+        <div class="share-buttons">
+
+            {% if audio_b64 %}
+                <button class="share-btn listen-btn" onclick="playAudio()">🔊 Listen</button>
+                <button class="share-btn stop-btn" onclick="stopAudio()">⏹ Stop</button>
+            {% endif %}
+
+            <a class="share-btn whatsapp-btn"
+               href="https://wa.me/?text={{ result|urlencode }}" target="_blank">WhatsApp</a>
+
+            <button class="share-btn copy-btn" onclick="copyPoem()">Copy</button>
+            <button class="share-btn download-btn" onclick="downloadPoem()">Download</button>
+
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JS -->
+<script>
+
+function toggleTheme() {
+    document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme",
+        document.documentElement.classList.contains("dark") ? "dark" : "light"
+    );
+}
+
+/* COPY */
+function copyPoem() {
+    navigator.clipboard.writeText(document.getElementById("poemText").innerText);
+    alert("Copied!");
+}
+
+/* DOWNLOAD */
+function downloadPoem() {
+    const text = document.getElementById("poemText").innerText;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([text], {type:"text/plain"}));
+    link.download = "poem.txt";
+    link.click();
+}
+
+/* AUDIO */
+function playAudio() {
+    const audio = document.getElementById("audioPlayer");
+
+    if (!audio) {
+        alert("❌ No audio generated.");
+        return;
+    }
+
+    audio.play();
+}
+
+function stopAudio() {
+    const audio = document.getElementById("audioPlayer");
+    if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    }
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+/* global.css — visuals + theme variables (NO JS here) */
+
+/* -----------------------
+   Theme variables
+   ----------------------- */
+:root{
+  --bg: #eef1f6;
+  --nav-bg: #ffffff;
+  --box-bg: #ffffff;
+  --output-bg: #fafafa;
+  --input-bg: #ffffff;
+  --border: #dcdde6;
+  --accent: #6c63ff;
+  --accent-hover: #584df2;
+  --shadow: 0 8px 30px rgba(16,24,40,0.06);
+  --text: #1f2937;
+  --muted: #6b7280;
+}
+
+/* dark theme variables applied when <html> has .dark */
+html.dark{
+  --bg: #0b0c0e;
+  --nav-bg: #111214;
+  --box-bg: #141416;
+  --output-bg: #1d1f22;
+  --input-bg: #161618;
+  --border: #2c2f33;
+  --accent: #8b83ff;
+  --accent-hover: #7a72ff;
+  --shadow: 0 8px 30px rgba(0,0,0,0.6);
+  --text: #e6e6e8;
+  --muted: #9aa0a6;
+}
+
+/* page */
+html,body{
+  height:100%;
+  margin:0;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* navbar */
+.nav{
+  max-width:1100px;
+  margin:18px auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 18px;
+  border-radius:12px;
+  background: var(--nav-bg);
+  box-shadow: var(--shadow);
+  border:1px solid var(--border);
+}
+
+.nav h2{ font-size:20px; margin:0; font-weight:700; }
+.nav a{ color:var(--accent); text-decoration:none; font-weight:600; margin-right:12px; }
+
+/* toggle */
+.toggle-box{ cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+.dark-toggle{ width:46px; height:22px; border-radius:999px; background:#cfcfd6; position:relative; border:1px solid var(--border); }
+.dark-toggle .dot{ position:absolute; top:2px; left:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:left .28s ease, background .28s ease; }
+html.dark .dark-toggle{ background:var(--accent); }
+html.dark .dark-toggle .dot{ left:25px; background:#fff; }
+
+/* main box */
+.container{
+  max-width:900px;
+  margin:16px auto;
+  padding:26px;
+}
+
+.box{
+  background:var(--box-bg);
+  border-radius:16px;
+  padding:26px;
+  box-shadow: var(--shadow);
+  border:1px solid var(--border);
+  animation: fadeIn .36s ease;
+}
+
+/* form controls */
+textarea, select{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--input-bg);
+  color:var(--text);
+  font-size:15px;
+  outline:none;
+  box-sizing:border-box;
+  resize:vertical;
+  min-height:140px;
+}
+
+select{ height:44px; }
+
+.btn{
+  display:inline-block;
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  border-radius:10px;
+  text-align:center;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  transition:transform .12s ease, background .12s ease;
+}
+
+.btn:hover{ background:var(--accent-hover); transform:translateY(-1px); }
+
+/* output */
+.output-box{
+  margin-top:20px;
+  background:var(--output-bg);
+  border-radius:12px;
+  padding:18px;
+  border:1px solid var(--border);
+  white-space:pre-wrap;
+}
+
+/* share buttons */
+.share-buttons{ display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.share-btn{ flex:1; padding:12px; border-radius:10px; color:#fff; text-align:center; font-weight:600; text-decoration:none; }
+.whatsapp{ background:#25D366; } .copy{ background:#ff9800; } .download{ background:#2196f3; } .listen{ background:#f06292; }
+
+/* small helper */
+.muted{ color:var(--muted); font-size:13px; }
+
+/* responsive */
+@media (max-width:640px){
+  .container{ padding-left:12px; padding-right:12px; }
+  .nav{ margin:14px 8px; padding:12px; }
+  .box{ padding:18px; }
+  textarea{ min-height:120px; }
+}
+
+/* subtle animation */
+@keyframes fadeIn{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }

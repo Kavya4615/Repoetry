@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Poem</title>
+    <style>
+        body { font-family: Poppins, sans-serif; padding: 20px; }
+        .card {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #ccc;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: 1px solid #aaa;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: purple;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>➕ Post a New Poem</h2>
+
+<div class="card">
+    <form method="POST">
+        {% csrf_token %}
+
+        <input type="text" name="title" placeholder="Poem Title (optional)">
+
+        <select name="language">
+            <option value="te">Telugu</option>
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+        </select>
+
+        <textarea name="text" rows="8" placeholder="Write your poem here..."></textarea>
+
+        <button type="submit">Post Poem</button>
+    </form>
+</div>
+
+</body>
+</html>

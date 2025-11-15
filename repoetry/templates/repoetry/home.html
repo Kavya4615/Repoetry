@@ -1,0 +1,322 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Repoetry - Home</title>
+
+  <!-- Prevent dark-mode flicker -->
+  <script>
+    (() => {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --text: #222;
+      --card: #ffffff;
+      --border: #dcdcdc;
+      --comment: #efefef;
+      --toggle-bg: #bbbbbb;
+    }
+
+    html.dark {
+      --bg: #0f0f0f;
+      --text: #e6e6e6;
+      --card: #1a1a1a;
+      --border: #3d3d3d;
+      --comment: #272727;
+      --toggle-bg: #6c63ff;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+
+    header {
+      background: var(--card);
+      padding: 12px 26px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 99;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+    }
+
+    .nav-links a {
+      margin-left: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #6c63ff;
+    }
+
+    .post-btn {
+      padding: 7px 12px;
+      background: #6c63ff;
+      color: white;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .toggle-wrapper {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .dark-toggle {
+      width: 45px;
+      height: 22px;
+      background: var(--toggle-bg);
+      border-radius: 20px;
+      position: relative;
+    }
+
+    .dark-toggle-circle {
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      transition: 0.3s;
+    }
+
+    html.dark .dark-toggle-circle {
+      left: 23px;
+    }
+
+    .feed {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .poem-card {
+      background: var(--card);
+      width: 90%;
+      max-width: 620px;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .poem-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .poem-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .poem-text {
+      margin-top: 8px;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+
+    .like-btn,
+    .share-btn {
+      border: none;
+      cursor: pointer;
+      background: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .liked {
+      color: #ff2a70;
+    }
+
+    .comment-section {
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      margin-top: 12px;
+    }
+
+    .toggle-comments-btn {
+      background: none;
+      color: #6c63ff;
+      border: none;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .comment {
+      background: var(--comment);
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Repoetry</h1>
+
+    <div style="display:flex; align-items:center; gap:18px;">
+
+      {% if user.is_authenticated %}
+      <a href="{% url 'add_poem' %}" class="post-btn">➕ Post Poem</a>
+      {% endif %}
+
+      <div class="toggle-wrapper" onclick="toggleTheme()">
+        <div class="dark-toggle">
+          <div class="dark-toggle-circle"></div>
+        </div>
+      </div>
+
+      <div class="nav-links">
+        <a href="{% url 'transform_page' %}">✨ AI Transform</a>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+        <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+      </div>
+
+    </div>
+  </header>
+
+
+  <div class="feed">
+    {% for poem in poems %}
+    <div class="poem-card">
+
+      <div class="poem-header">
+        <div>@{{ poem.author.username }}</div>
+        <div>{{ poem.poet_name }}</div>
+      </div>
+
+      {% if poem.title %}
+      <div class="poem-title">{{ poem.title }}</div>
+      {% endif %}
+
+      <div class="poem-text">{{ poem.text }}</div>
+
+      <div style="display:flex; justify-content:space-between; margin-top:12px;">
+
+        {% if user.is_authenticated %}
+        <button id="like-btn-{{ poem.id }}"
+          class="like-btn {% if poem.is_liked %}liked{% endif %}"
+          data-like-url="{% url 'like_poem' poem.id %}"
+          onclick="likePoem({{ poem.id }})">
+          ❤️ <span id="like-count-{{ poem.id }}">{{ poem.total_likes }}</span>
+        </button>
+        {% else %}
+        <a href="{% url 'login' %}" class="like-btn">
+          ❤️ {{ poem.total_likes }}
+        </a>
+        {% endif %}
+
+        <a class="share-btn" href="https://wa.me/?text={{ poem.text|urlencode }}" target="_blank">
+          📤 Share
+        </a>
+
+      </div>
+
+      <!-- COMMENTS -->
+      <div class="comment-section">
+        <button class="toggle-comments-btn" onclick="toggleComments({{ poem.id }})">
+          💬 Comments ({{ poem.comments.count }})
+        </button>
+
+        <div id="comments-{{ poem.id }}" style="display:none;">
+
+          {% for c in poem.comments.all %}
+          <div class="comment">
+            <strong>{{ c.user.username }}</strong>: {{ c.text }}
+          </div>
+          {% empty %}
+          <p>No comments yet.</p>
+          {% endfor %}
+
+          {% if user.is_authenticated %}
+          <form action="{% url 'add_comment' poem.id %}" method="POST" style="margin-top:12px;">
+            {% csrf_token %}
+            <input type="text" name="comment" placeholder="Write a comment..." required
+              style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--comment); color:var(--text);">
+            <button type="submit"
+              style="margin-top:8px; padding:8px; background:#6c63ff; color:white; width:100%; border-radius:10px; border:none;">
+              ➤ Post Comment
+            </button>
+          </form>
+          {% else %}
+          <p><a href="{% url 'login' %}" style="color:#6c63ff;">Login to comment</a></p>
+          {% endif %}
+
+        </div>
+
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  <footer>Repoetry © 2025</footer>
+
+
+  <script>
+    function toggleTheme() {
+      document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme",
+        document.documentElement.classList.contains("dark") ? "dark" : "light");
+    }
+
+    function likePoem(id) {
+      const btn = document.getElementById(`like-btn-${id}`);
+      fetch(btn.dataset.likeUrl)
+        .then(r => r.json())
+        .then(data => {
+          btn.classList.toggle("liked", data.liked);
+          document.getElementById(`like-count-${id}`).textContent = data.likes;
+        });
+    }
+
+    function toggleComments(id) {
+      const box = document.getElementById(`comments-${id}`);
+      box.style.display = box.style.display === "block" ? "none" : "block";
+    }
+  </script>
+
+</body>
+
+</html>
