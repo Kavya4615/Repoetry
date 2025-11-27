@@ -12,6 +12,10 @@ import requests
 import os
 import base64
 
+from io import BytesIO
+from gtts import gTTS
+from langdetect import detect
+
 
 # ------------------------------------------------------
 # HOME PAGE
@@ -205,13 +209,43 @@ def transform_poem(request):
                 contents=prompt
             )
             output = response.text
-
         except Exception as e:
             output = f"⚠️ Error: {str(e)}"
 
-        audio_bytes = generate_telugu_voice(output)
-        audio_b64 = base64.b64encode(audio_bytes).decode("utf-8") if audio_bytes else None
-        print("audio_b64 length:", len(audio_b64) if audio_b64 else "None")
+        # 🔊 TEXT → SPEECH (gTTS + auto language detection)
+        audio_b64 = None
+        try:
+            # Only try TTS if we didn't hit an error message
+            if not output.startswith("⚠️ Error"):
+                # Detect language from the original poem text
+                try:
+                    detected = detect(poem_text) if poem_text else "en"
+                except Exception:
+                    detected = "en"
+
+                # Map detection to gTTS-supported codes we care about
+                if detected.startswith("te"):
+                    lang = "te"
+                elif detected.startswith("hi"):
+                    lang = "hi"
+                elif detected.startswith("en"):
+                    lang = "en"
+                else:
+                    # Fallback if some other language is detected
+                    lang = "en"
+
+                # Create TTS from the *output* (transformed poem + explanation)
+                tts = gTTS(text=output, lang=lang)
+
+                buf = BytesIO()
+                tts.write_to_fp(buf)
+                audio_bytes = buf.getvalue()
+                audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+        except Exception as e:
+            # Don't break the page if TTS fails, just log it
+            print("TTS error:", e)
+            audio_b64 = None
 
         return render(
             request,
@@ -223,6 +257,7 @@ def transform_poem(request):
                 "audio_b64": audio_b64,
             }
         )
+
 
     return redirect("transform_page")
 
