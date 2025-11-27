@@ -5,7 +5,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-$sd0sk02byhg+08*k3g#r_=0&9b89j%blr2lp5jrs&$1*5+_+r'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["repoetry.onrender.com",
+    ".onrender.com",   # any Render subdomain
+    "localhost",
+    "127.0.0.1",]
 
 # -------------------- APPS --------------------
 INSTALLED_APPS = [
