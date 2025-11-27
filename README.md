@@ -133,7 +133,7 @@ repoetry/
 > Replace with your own image URLs.
 
 ### Home Page  
-![Home Screenshot](https://your-image-link/home.jpg)
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013506.png
 
 ### AI Transformer  
 ![Transformer Screenshot](https://your-image-link/transformer.jpg)
