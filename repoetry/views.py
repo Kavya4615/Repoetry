@@ -147,7 +147,7 @@ def generate_telugu_voice(text):
 
     headers = {
         "Accept": "audio/mpeg",
-        "xi-api-key": ELEVEN_API_KEY,
+        "xi-api-key": "ELEVEN_API_KEY",
         "Content-Type": "application/json"
     }
 
@@ -192,7 +192,7 @@ def transform_poem(request):
         prompt = f"""
         Convert the following Telugu poem into {form_type}.
         Maintain meaning, rhyme, meter, and classical structure.
-        Keep the text simple. Do not bold anything.
+        Keep the text simple. Do not provide bold letter in the output
         Also give the explanation of the poem in English.
 
         Original Poem:
