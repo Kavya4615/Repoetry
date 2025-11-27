@@ -24,6 +24,10 @@ Repoetry is a modern poetry-sharing platform with AI-powered poem transformation
 
 ---
 
+## Project link(Deployed)
+
+https://repoetry.onrender.com/
+
 ## 🛠 Technologies Used
 
 - **Django** (Backend)
@@ -133,40 +137,26 @@ repoetry/
 > Replace with your own image URLs.
 
 ### Home Page  
-https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013506.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20012331.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20012356.png
 
 ### AI Transformer  
-![Transformer Screenshot](https://your-image-link/transformer.jpg)
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20012522.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20012534.png
 
 ### Add Poem Page  
-![Add Poem Screenshot](https://your-image-link/addpoem.jpg)
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20012428.png
+
+### Discription of project
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013357.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013409.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013425.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013438.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013454.png
+https://github.com/Kavya4615/Repoetry/blob/maij/images/Screenshot%202025-11-28%20013506.png
 
 ---
 
-## 🖼 How to Add Your Images in README
-
-Upload your image → copy its GitHub link → use:
-
-```md
-![Screenshot](https://github.com/yourusername/repoetry/images/home.png)
-```
-
----
-
-## ❗ Troubleshooting
-
-### ElevenLabs: "Unusual activity detected"
-- Disable VPN  
-- Switch network  
-- Or use a paid plan  
-
-### Git push rejected
-```sh
-git pull origin main --rebase
-git push
-```
-
----
 
 ## 🤝 Contributing
 Pull requests are welcome. Please open an issue for major changes.
