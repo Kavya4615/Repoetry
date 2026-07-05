@@ -206,7 +206,11 @@ def transform_poem(request):
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt
+                contents=prompt,
+                config={
+                    "thinking_config": {"thinking_budget": 0},
+                    "http_options": {"timeout": 60000},
+                },
             )
             output = response.text
         except Exception as e:
