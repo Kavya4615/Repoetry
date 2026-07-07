@@ -22,3 +22,12 @@ urlpatterns = [
     
 
 ]
+
+# Production static serving fallback for Gunicorn/Render
+from django.views.static import serve
+from django.urls import re_path
+from django.conf import settings
+
+urlpatterns += [
+    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATICFILES_DIRS[0]}),
+]
