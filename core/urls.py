@@ -17,6 +17,8 @@ urlpatterns = [
     path('repoetry/', include('repoetry.urls')),  # include the app-level urls
     path("transform/", transform_page, name="transform_page"),
     path("transform/run/", transform_poem, name="transform_poem"),
+    path('add/', views.add_poem, name='add_poem'),
+
     
 
 ]

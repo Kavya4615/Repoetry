@@ -3,87 +3,137 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.utils.translation import gettext as _
 from .models import Poem, Like, Comment
 
 from google import genai
+from google.genai import types
+from pydantic import BaseModel, Field
+from typing import List
+import json
 import requests
 import os
 import base64
 
 from io import BytesIO
 from gtts import gTTS
-from langdetect import detect
 
+# ------------------------------------------------------
+# PYDANTIC STRUCTURED OUTPUT SCHEMAS
+# ------------------------------------------------------
+class WordMeaning(BaseModel):
+    word: str = Field(description="The Telugu word or short phrase from the transformed poem.")
+    meaning: str = Field(description="The English translation or contextual meaning of the word.")
+
+class PoemTransformation(BaseModel):
+    transformed_poem: str = Field(description="The transformed poem written strictly in the requested Telugu poetic form (Dwipada, Kanda Padyam, Satakam, or Utpalamala).")
+    english_translation: str = Field(description="Line-by-line translation of the transformed Telugu poem in English.")
+    explanation: str = Field(description="Detailed explanation of the poem's theme, meter structure, and literary context in English.")
+    word_meanings: List[WordMeaning] = Field(description="A vocabulary mapping of key or complex Telugu words from the poem to their English meanings.")
 
 # ------------------------------------------------------
 # HOME PAGE
 # ------------------------------------------------------
+@ensure_csrf_cookie
 def home(request):
+    # Renders the minimal home page shell which is loaded by home.js
+    return render(request, 'repoetry/home.html')
+
+# ------------------------------------------------------
+# API: LIST POEMS
+# ------------------------------------------------------
+def api_poems(request):
     poems = (
         Poem.objects.all()
         .order_by('-id')
         .prefetch_related('likes', 'comments', 'author')
     )
-
+    poems_data = []
     for poem in poems:
-        poem.total_likes = poem.likes.count()
-        poem.comments_list = poem.comments.all().order_by('-id')
-        poem.is_liked = (
-            request.user.is_authenticated
-            and poem.likes.filter(user=request.user).exists()
-        )
-
-    return render(request, 'repoetry/home.html', {'poems': poems})
-
+        poems_data.append({
+            "id": poem.id,
+            "title": poem.title or "(Untitled)",
+            "poet_name": poem.poet_name or "Anonymous",
+            "text": poem.text,
+            "language": poem.language,
+            "author": poem.author.username,
+            "total_likes": poem.likes.count(),
+            "is_liked": request.user.is_authenticated and poem.likes.filter(user=request.user).exists(),
+            "comments": [
+                {
+                    "username": c.user.username,
+                    "text": c.text,
+                }
+                for c in poem.comments.all().order_by('-id')
+            ]
+        })
+    return JsonResponse({"poems": poems_data})
 
 # ------------------------------------------------------
 # SIGNUP
 # ------------------------------------------------------
+@ensure_csrf_cookie
 def signup(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        pw1 = request.POST['password1']
-        pw2 = request.POST['password2']
+        username = ""
+        pw1 = ""
+        pw2 = ""
+        try:
+            payload = json.loads(request.body)
+            username = payload.get('username', '').strip()
+            pw1 = payload.get('password1', '')
+            pw2 = payload.get('password2', '')
+        except Exception:
+            pass
+
+        if not username:
+            username = request.POST.get('username', '').strip()
+            pw1 = request.POST.get('password1', '')
+            pw2 = request.POST.get('password2', '')
+
+        if not username or not pw1:
+            return JsonResponse({'success': False, 'error': _("Missing fields.")}, status=400)
 
         if pw1 != pw2:
-            messages.error(request, _("Passwords do not match."))
-            return redirect('signup')
+            return JsonResponse({'success': False, 'error': _("Passwords do not match.")}, status=400)
 
         if User.objects.filter(username=username).exists():
-            messages.error(request, _("Username already exists."))
-            return redirect('signup')
+            return JsonResponse({'success': False, 'error': _("Username already exists.")}, status=400)
 
         User.objects.create_user(username=username, password=pw1)
-        messages.success(request, _("Account created successfully! Please login."))
-        return redirect('login')
+        return JsonResponse({'success': True, 'message': _("Account created successfully! Please login.")})
 
     return render(request, 'repoetry/signup.html')
-
 
 # ------------------------------------------------------
 # LOGIN
 # ------------------------------------------------------
+@ensure_csrf_cookie
 def login_view(request):
-    list(messages.get_messages(request))
-
     if request.method == 'POST':
-        username = request.POST.get('username')
-        pw = request.POST.get('password')
+        username = ""
+        pw = ""
+        try:
+            payload = json.loads(request.body)
+            username = payload.get('username', '').strip()
+            pw = payload.get('password', '')
+        except Exception:
+            pass
+
+        if not username:
+            username = request.POST.get('username', '').strip()
+            pw = request.POST.get('password', '')
 
         user = authenticate(request, username=username, password=pw)
-
         if user:
             login(request, user)
-            messages.success(request, _("Welcome back, %(username)s!") % {'username': user.username})
-            return redirect('home')
+            return JsonResponse({'success': True, 'username': user.username})
 
-        messages.error(request, _("Invalid username or password."))
-        return redirect('login')
+        return JsonResponse({'success': False, 'error': _("Invalid username or password.")}, status=400)
 
     return render(request, 'repoetry/login.html')
-
 
 # ------------------------------------------------------
 # LOGOUT
@@ -91,7 +141,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('home')
-
 
 # ------------------------------------------------------
 # LIKE
@@ -109,7 +158,6 @@ def like_poem(request, poem_id):
 
     return JsonResponse({'liked': liked, 'likes': poem.likes.count()})
 
-
 # ------------------------------------------------------
 # COMMENT
 # ------------------------------------------------------
@@ -118,87 +166,68 @@ def add_comment(request, poem_id):
     poem = get_object_or_404(Poem, id=poem_id)
 
     if request.method == 'POST':
-        text = request.POST.get('comment', '').strip()
+        text = ""
+        try:
+            payload = json.loads(request.body)
+            text = payload.get('comment', '').strip()
+        except Exception:
+            pass
+
+        if not text:
+            text = request.POST.get('comment', '').strip()
 
         if text:
-            Comment.objects.create(user=request.user, poem=poem, text=text)
-            messages.success(request, _("Comment added successfully!"))
-
-    return redirect('home')
-
+            comment = Comment.objects.create(user=request.user, poem=poem, text=text)
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'username': request.user.username,
+                    'text': comment.text
+                }
+            })
+    return JsonResponse({'success': False, 'error': 'Invalid comment text'}, status=400)
 
 # ------------------------------------------------------
 # TRANSFORM PAGE
 # ------------------------------------------------------
 @login_required(login_url='login')
+@ensure_csrf_cookie
 def transform_page(request):
     return render(request, 'repoetry/transformer.html')
 
-
 # ------------------------------------------------------
-# ELEVENLABS TTS FUNCTION
-# ------------------------------------------------------
-def generate_telugu_voice(text):
-    ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
-    print("🔑 ELEVEN_API_KEY:", ELEVEN_API_KEY)
-    if not ELEVEN_API_KEY:
-        print("⚠️ ELEVENLABS ERROR: No API key found.")
-        return None
-
-    VOICE_ID = "pNInz6obpgDQGcFmaJgB"
-
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
-
-    headers = {
-        "Accept": "audio/mpeg",
-        "xi-api-key": "ELEVEN_API_KEY",
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "text": text,
-        "voice_settings": {
-            "stability": 0.50,
-            "similarity_boost": 0.65
-        }
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        print("🔍 Eleven Response Code:", response.status_code)
-
-        if response.status_code != 200:
-            print("🔴 ELEVENLABS ERROR:", response.text)
-            return None
-
-        return response.content
-
-    except Exception as e:
-        print("🚨 ELEVENLABS EXCEPTION:", e)
-        return None
-
-
-# ------------------------------------------------------
-# TRANSFORM POEM
+# TRANSFORM POEM (STRUCTURED AI OUTPUT)
 # ------------------------------------------------------
 @login_required(login_url='login')
 def transform_poem(request):
     if request.method == "POST":
-        poem_text = request.POST.get("poem", "").strip()
-        form_type = request.POST.get("form", "").strip()
+        poem_text = ""
+        form_type = ""
+        try:
+            payload = json.loads(request.body)
+            poem_text = payload.get("poem", "").strip()
+            form_type = payload.get("form", "").strip()
+        except Exception:
+            pass
 
         if not poem_text:
-            messages.error(request, _("Please enter a poem."))
-            return redirect("transform_page")
+            poem_text = request.POST.get("poem", "").strip()
+            form_type = request.POST.get("form", "").strip()
 
-        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        if not poem_text:
+            return JsonResponse({"success": False, "error": _("Please enter a poem.")}, status=400)
+
+        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return JsonResponse({"success": False, "error": "Google API key is not configured in the server environment. Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable."}, status=500)
+
+        client = genai.Client(api_key=api_key)
 
         prompt = f"""
         Convert the following Telugu poem into {form_type}.
         Maintain meaning, rhyme, meter, and classical structure.
-        Keep the text simple. Do not provide bold letter in the output
-        Also give the explanation of the poem in English.
-
+        Keep the text simple. Do not provide bold letters or markdown in the JSON values.
+        
         Original Poem:
         {poem_text}
         """
@@ -207,78 +236,90 @@ def transform_poem(request):
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
-                config={
-                    "thinking_config": {"thinking_budget": 0},
-                    "http_options": {"timeout": 60000},
-                },
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=PoemTransformation,
+                    system_instruction=(
+                        "You are an expert Telugu scholar, classical poet, and translator specializing in traditional poetic meters. "
+                        "Transform the input Telugu poem into the requested form while strictly respecting Telugu grammar, meter, and classical structure. "
+                        "Generate accurate translations and explanations. Return JSON matching the schema."
+                    ),
+                    temperature=0.75,
+                ),
             )
-            output = response.text
+            data = json.loads(response.text)
         except Exception as e:
-            output = f"⚠️ Error: {str(e)}"
+            return JsonResponse({"success": False, "error": f"AI Error: {str(e)}"}, status=500)
 
-        # 🔊 TEXT → SPEECH (gTTS + auto language detection)
-        audio_b64 = None
-        try:
-            # Only try TTS if we didn't hit an error message
-            if not output.startswith("⚠️ Error"):
-                # Detect language from the original poem text
-                try:
-                    detected = detect(poem_text) if poem_text else "en"
-                except Exception:
-                    detected = "en"
-
-                # Map detection to gTTS-supported codes we care about
-                if detected.startswith("te"):
-                    lang = "te"
-                elif detected.startswith("hi"):
-                    lang = "hi"
-                elif detected.startswith("en"):
-                    lang = "en"
-                else:
-                    # Fallback if some other language is detected
-                    lang = "en"
-
-                # Create TTS from the *output* (transformed poem + explanation)
-                tts = gTTS(text=output, lang=lang)
-
-                buf = BytesIO()
-                tts.write_to_fp(buf)
-                audio_bytes = buf.getvalue()
-                audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
-
-        except Exception as e:
-            # Don't break the page if TTS fails, just log it
-            print("TTS error:", e)
-            audio_b64 = None
-
-        return render(
-            request,
-            "repoetry/transformer.html",
-            {
-                "original": poem_text,
-                "result": output,
-                "form_type": form_type,
-                "audio_b64": audio_b64,
-            }
-        )
-
+        # 🔊 TEXT → SPEECH (Moved to asynchronous load on click to improve response times)
+        transformed_poem = data.get("transformed_poem", "")
+        return JsonResponse({
+            "success": True,
+            "transformed_poem": transformed_poem,
+            "english_translation": data.get("english_translation", ""),
+            "explanation": data.get("explanation", ""),
+            "word_meanings": data.get("word_meanings", []),
+            "audio_b64": None
+        })
 
     return redirect("transform_page")
 
-
 # ------------------------------------------------------
-# ADD POEM (NEW FEATURE)
+# API: TEXT TO SPEECH (ASYNC GENERATION)
 # ------------------------------------------------------
 @login_required(login_url='login')
-def add_poem(request):
+def api_tts(request):
     if request.method == "POST":
-        title = request.POST.get("title", "").strip()
-        text = request.POST.get("text", "").strip()
-        language = request.POST.get("language", "te")
+        text = ""
+        try:
+            payload = json.loads(request.body)
+            text = payload.get("text", "").strip()
+        except Exception:
+            pass
 
         if not text:
-            messages.error(request, "Poem text cannot be empty.")
-            return redirect("add_poem")
+            text = request.POST.get("text", "").strip()
+
+        if not text:
+            return JsonResponse({"success": False, "error": "No text provided for TTS."}, status=400)
+
+        try:
+            tts = gTTS(text=text, lang="te")
+            buf = BytesIO()
+            tts.write_to_fp(buf)
+            audio_bytes = buf.getvalue()
+            audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+            return JsonResponse({"success": True, "audio_b64": audio_b64})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": f"TTS synthesis failed: {str(e)}"}, status=500)
+
+    return JsonResponse({"success": False, "error": "Method not allowed."}, status=405)
+
+# ------------------------------------------------------
+# ADD POEM
+# ------------------------------------------------------
+@login_required(login_url='login')
+@ensure_csrf_cookie
+def add_poem(request):
+    if request.method == "POST":
+        title = ""
+        text = ""
+        language = "te"
+        try:
+            payload = json.loads(request.body)
+            title = payload.get("title", "").strip()
+            text = payload.get("text", "").strip()
+            language = payload.get("language", "te")
+        except Exception:
+            pass
+
+        if not text:
+            title = request.POST.get("title", "").strip()
+            text = request.POST.get("text", "").strip()
+            language = request.POST.get("language", "te")
+
+        if not text:
+            return JsonResponse({"success": False, "error": "Poem text cannot be empty."}, status=400)
 
         Poem.objects.create(
             author=request.user,
@@ -287,8 +328,6 @@ def add_poem(request):
             language=language,
             text=text
         )
-
-        messages.success(request, "Your poem has been posted successfully!")
-        return redirect("home")
+        return JsonResponse({"success": True})
 
     return render(request, "repoetry/add_poem.html")

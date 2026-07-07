@@ -1,215 +1,22 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Login - Repoetry</title>
-
-    <!-- Prevent Flicker Before Theme Loads -->
-    <script>
-        (function () {
-            const saved = localStorage.getItem("theme");
-            if (saved === "dark") document.documentElement.classList.add("dark");
-        })();
-    </script>
-
-    <style>
-        /* ---------------- GLOBAL THEME VARIABLES ---------------- */
-        :root {
-            --bg: linear-gradient(135deg, #d3cce3, #e9e4f0);
-            --card-bg: rgba(255, 255, 255, 0.92);
-            --border: #ccc;
-            --text: #222;
-            --input-bg: #fff;
-            --accent: #6c63ff;
-            --accent-hover: #5a54e8;
-            --shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            --link: #6c63ff;
-        }
-
-        html.dark {
-            --bg: linear-gradient(135deg, #000000, #1b1b1b);
-            --card-bg: rgba(24, 24, 24, 0.92);
-            --border: #555;
-            --text: #efefef;
-            --input-bg: #262626;
-            --accent: #8a82ff;
-            --accent-hover: #7b73ff;
-            --shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
-            --link: #a79fff;
-        }
-
-        /* ---------------- BODY ---------------- */
-        body {
-            margin: 0;
-            height: 100vh;
-            background: var(--bg);
-            color: var(--text);
-            font-family: "Poppins", sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background 0.35s ease, color 0.35s ease;
-        }
-
-        /* ---------------- LOGIN CARD ---------------- */
-        .container {
-            background: var(--card-bg);
-            padding: 40px 35px;
-            border-radius: 18px;
-            width: 360px;
-            backdrop-filter: blur(10px);
-            box-shadow: var(--shadow);
-            animation: fadeIn 0.35s ease;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        h2 {
-            margin: 0 0 18px;
-            font-size: 22px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        input {
-            width: 90%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--input-bg);
-            color: var(--text);
-            font-size: 15px;
-            outline: none;
-            transition: border 0.2s ease;
-        }
-
-        input:focus {
-            border-color: var(--accent);
-        }
-
-        button {
-            width: 95%;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 14px;
-            font-size: 16px;
-            font-weight: 500;
-            transition: 0.2s ease;
-        }
-
-        button:hover {
-            background: var(--accent-hover);
-        }
-
-        a {
-            color: var(--link);
-            font-weight: 500;
-            text-decoration: none;
-        }
-        a:hover { text-decoration: underline; }
-
-        .message {
-            color: #ff4b4b;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        /* ---------------- TOGGLE SWITCH ---------------- */
-        .theme-toggle-container {
-            position: fixed;
-            top: 20px;
-            right: 22px;
-            z-index: 100;
-        }
-
-        .toggle-wrapper {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-
-        .dark-toggle {
-            width: 46px;
-            height: 22px;
-            background: #b5b5b5;
-            border-radius: 20px;
-            position: relative;
-            transition: background 0.3s ease;
-        }
-
-        .dark-toggle-circle {
-            width: 18px;
-            height: 18px;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 2px;
-            left: 3px;
-            transition: left 0.3s ease;
-        }
-
-        html.dark .dark-toggle { background: #6c63ff; }
-        html.dark .dark-toggle-circle { left: 25px; }
-    </style>
-
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login — Repoetry</title>
+    <meta name="description" content="Sign in to your Repoetry account to post poems and use AI tools." />
+    <script>(()=>{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');})()</script>
 </head>
-
 <body>
+    <div id="app"></div>
 
-    <!-- DARK MODE TOGGLE -->
-    <div class="theme-toggle-container">
-        <div class="toggle-wrapper" onclick="toggleTheme()">
-            <div class="dark-toggle">
-                <div class="dark-toggle-circle"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOGIN BOX -->
-    <div class="container">
-        <h2>Login to Repoetry</h2>
-
-        <form method="POST">
-            {% csrf_token %}
-            <input type="text" name="username" placeholder="Username" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Login</button>
-        </form>
-
-        <p style="margin-top: 14px;">
-            Don't have an account? <a href="{% url 'signup' %}">Sign Up</a>
-        </p>
-
-        {% if messages %}
-            {% for message in messages %}
-                {% if "invalid" in message|lower or "password" in message|lower %}
-                <div class="message">{{ message }}</div>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <!-- THEME SCRIPT -->
+    <script src="{% static 'js/base.js' %}"></script>
+    <script src="{% static 'js/auth.js' %}"></script>
     <script>
-        function toggleTheme() {
-            document.documentElement.classList.toggle("dark");
-            localStorage.setItem(
-                "theme",
-                document.documentElement.classList.contains("dark") ? "dark" : "light"
-            );
-        }
+        const user = { isAuthenticated: false, username: "" };
+        renderHeader(user);
+        initLogin('app');
     </script>
-
 </body>
-
 </html>

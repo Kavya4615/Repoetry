@@ -14,6 +14,10 @@ urlpatterns = [
     path('transform/', views.transform_page, name='transform_page'),
     path('transform/submit/', views.transform_poem, name='transform_poem'),
     path("add/", views.add_poem, name="add_poem"),
+    path('api/poems/', views.api_poems, name='api_poems'),
+    path('api/tts/', views.api_tts, name='api_tts'),
+
+
 
 
 
